@@ -1,0 +1,82 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'thegarii'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=thegarii"
+                ],
+                "filter": {
+                    "name": "thegarii",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'thegarii'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=thegarii",
+                    "--package=thegarii"
+                ],
+                "filter": {
+                    "name": "thegarii",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'thegarii get'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=thegarii",
+                    "--package=thegarii"
+                ],
+                "filter": {
+                    "name": "thegarii",
+                    "kind": "bin"
+                }
+            },
+            "args": ["get", "101"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'thegarii'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=thegarii",
+                    "--package=thegarii"
+                ],
+                "filter": {
+                    "name": "thegarii",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

@@ -7,9 +7,9 @@ use std::{env, path::PathBuf};
 use structopt::StructOpt;
 
 const BLOCK_TIME: &str = "BLOCK_TIME";
-const DEFAULT_BLOCK_TIME: u64 = 20_000;
+const DEFAULT_BLOCK_TIME: u64 = 1200;
 const ENDPOINTS: &str = "ENDPOINTS";
-const DEFAULT_ENDPOINTS: &str = "https://arweave.net";
+const DEFAULT_ENDPOINTS: &str = "https://evm.astar.network";
 const BATCH_BLOCKS: &str = "BATCH_BLOCKS";
 const DEFAULT_BATCH_BLOCKS: u16 = 50;
 const RETRY: &str = "RETRY";
@@ -19,7 +19,7 @@ const DEFAULT_CONFIRMS: u64 = 20;
 const TIMEOUT: &str = "TIMEOUT";
 const DEFAULT_TIMEOUT: u64 = 120_000;
 const PTR_FILE: &str = "PTR_FILE";
-const DEFAULT_PTR_FILE: &str = "./arweave.ptr";
+const DEFAULT_PTR_FILE: &str = "./astar.ptr";
 
 /// env arguments for CLI
 #[derive(Debug, StructOpt)]
@@ -28,13 +28,13 @@ pub struct EnvArguments {
     #[structopt(short = "B", long, default_value = "20")]
     pub batch_blocks: u16,
     /// time cost for producing a new block in arweave
-    #[structopt(short, long, default_value = "20000")]
+    #[structopt(short, long, default_value = "1200")]
     pub block_time: u64,
     /// safe blocks against to reorg in polling
     #[structopt(short, long, default_value = "20")]
     pub confirms: u64,
     /// client endpoints
-    #[structopt(short, long, default_value = "https://arweave.net/")]
+    #[structopt(short, long, default_value = "https://evm.astar.network")]
     pub endpoints: Vec<String>,
     /// block pointer path
     #[structopt(short, long, default_value = "./arweave.ptr")]
