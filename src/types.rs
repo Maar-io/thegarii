@@ -4,6 +4,7 @@
 //! arweave types
 use crate::encoding::{number_or_string, option_number_or_string};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 /// Arweave Block
 ///
@@ -54,6 +55,39 @@ pub struct Block {
     pub tx_root: Option<String>,
     pub tx_tree: Option<Vec<String>>,
     pub poa: Option<Poa>,
+}
+
+#[allow(non_snake_case)]
+#[derive(Debug, Deserialize)]
+pub struct BlockInfo {
+    author: String,
+    baseFeePerGas: String,
+    difficulty: String,
+    extraData: String,
+    gasLimit: String,
+    gasUsed: String,
+    hash: String,
+    logsBloom: String,
+    miner: String,
+    nonce: String,
+    number: String,
+    parentHash: String,
+    receiptsRoot: String,
+    sha3Uncles: String,
+    size: String,
+    stateRoot: String,
+    timestamp: String,
+    totalDifficulty: String,
+    transactions: Vec<String>, // You can change this to a more specific type if needed
+    transactionsRoot: String,
+    uncles: Vec<String>, // You can change this to a more specific type if needed
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ResponseRPC {
+    pub id: Value,
+    pub jsonrpc: Value,
+    pub result: Value,
 }
 
 /// POA field of `Block`

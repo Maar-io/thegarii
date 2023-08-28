@@ -4,13 +4,15 @@
 //! arweave client
 use crate::{
     result::{Error, Result},
-    types::{Block, FirehoseBlock, Transaction},
+    types::{Block, FirehoseBlock, Transaction, BlockInfo, ResponseRPC},
     Env,
 };
 use futures::future::join_all;
 use rand::Rng;
-use reqwest::{Client as ReqwestClient, ClientBuilder};
-use serde::de::DeserializeOwned;
+use reqwest::{header::CONTENT_TYPE, Client as ReqwestClient, ClientBuilder};
+use serde::{de::DeserializeOwned, Serialize, Deserialize};
+use serde_json::{json, Value};
+
 use std::time::Duration;
 
 /// Arweave client
@@ -20,6 +22,21 @@ pub struct Client {
     pub endpoints: Vec<String>,
     retry: u8,
 }
+
+// Define the RPC request structure
+// #[derive(Serialize, Debug)]
+// struct RpcRequest {
+//     jsonrpc: &'static str,
+//     id: u64,
+//     method: &'static str,
+//     params: Vec<Value>,
+// }
+
+// // Define the RPC response structure
+// #[derive(Debug, Deserialize)]
+// struct RpcResponse {
+//     result: AstarBlock,
+// }
 
 impl Client {
     /// get next endpoint
@@ -60,6 +77,10 @@ impl Client {
     /// http get request with base url
     async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T> {
         let mut retried = 0;
+        println!("{:#?}",self
+            .client
+            .get(&format!("{}/{}", self.next_endpoint(), path))
+        );
         loop {
             match self
                 .client
@@ -82,6 +103,86 @@ impl Client {
             }
         }
     }
+
+    /// http post request with base url
+    pub async fn post(&self, height: u64) -> Result<()> {
+        println!("--- get_block_json_type_incall ------------------------------------------");
+        let url = "https://evm.astar.network/";
+        // Define the RPC request parameters
+        let json_data = r#"{"jsonrpc":"2.0", "id":"1", "method":"eth_getBlockByNumber", "params":["0x10126", true]}"#;
+        let client = reqwest::Client::new();
+        let response = self.client
+            .post(url)
+            .header("Content-Type", "application/json;charset=utf-8")
+            .body(json_data.to_owned())
+            .send()
+            .await?
+            .json::<ResponseRPC>()
+            .await?;
+    
+        // Parse the response as JSON
+        let result = response.result.clone();
+    
+        // Print the parsed JSON response
+        println!("{:?}", result);
+        println!("Hash: {:?}", result["hash"]);
+
+
+        // println!("{:#?}", self.client);
+        // println!("{:#?}", self.client
+        // .get("https://evm.astar.network")
+        // .header("Content-Type", "application/json;charset=utf-8")
+        // .json(&rpc_request)  );
+        // Send the RPC request
+        // let response = self.client
+        //     .post("https://evm.astar.network")
+        //     .header(CONTENT_TYPE, "application/json;charset=utf-8")
+        //     .json(&rpc_request)
+        //     .send()
+        //     .await?
+            // .json::<map>()
+            // .await?
+            ;
+        
+        // let parsed_response =
+        //     serde_json::from_str::<String>(&response);
+
+        // println!("{:#?}", response);
+        // match parsed_response {
+        //     Ok(response) => {
+        //         println!("Parsed RPC Response: {:?}", response);
+        //     }
+        //     Err(err) => {
+        //         eprintln!("Error parsing response: {:?}", err);
+        //     }
+        // }
+        Ok(())
+
+    }
+        
+    
+
+    fn build_request_json(&self, params: Value, method: &str) -> Value {
+        // let jsonrpc = "2.0";
+        json!({
+           "jsonrpc": format!("2.0"),
+           "id": format!("1"),
+           "method": format!("{}", method),
+           "params": params,
+        })
+    }
+
+    // fn create_rpc_request_block() -> RpcRequest {
+    //     RpcRequest {
+    //         jsonrpc: "2.0",
+    //         id: 1,
+    //         method: "eth_getBlockByNumber",
+    //         params: vec![
+    //             json!("0x10126"), // Block number parameter
+    //             json!(true),      // Include full transaction details
+    //         ],
+    //     }
+    // }
 
     /// get arweave block by height
     ///
@@ -211,6 +312,7 @@ impl Client {
     /// ```
     pub async fn get_firehose_block_by_height(&self, height: u64) -> Result<FirehoseBlock> {
         let block = self.get_block_by_height(height).await?;
+        // println!("arweave block: {:?}", block);
         let txs: Vec<Transaction> = join_all(block.txs.iter().map(|tx| self.get_tx_by_id(tx)))
             .await
             .into_iter()
