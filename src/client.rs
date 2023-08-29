@@ -75,41 +75,42 @@ impl Client {
     }
 
     /// http get request with base url
-    async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T> {
-        let mut retried = 0;
-        println!("{:#?}",self
-            .client
-            .get(&format!("{}/{}", self.next_endpoint(), path))
-        );
-        loop {
-            match self
-                .client
-                .get(&format!("{}/{}", self.next_endpoint(), path))
-                .send()
-                .await?
-                .json()
-                .await
-            {
-                Ok(r) => return Ok(r),
-                Err(e) => {
-                    if retried < self.retry {
-                        tokio::time::sleep(Duration::from_millis(1000)).await;
-                        retried += 1;
-                        continue;
-                    }
+    // async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T> {
+    //     let mut retried = 0;
+    //     println!("{:#?}",self
+    //         .client
+    //         .get(&format!("{}/{}", self.next_endpoint(), path))
+    //     );
+    //     loop {
+    //         match self
+    //             .client
+    //             .get(&format!("{}/{}", self.next_endpoint(), path))
+    //             .send()
+    //             .await?
+    //             .json()
+    //             .await
+    //         {
+    //             Ok(r) => return Ok(r),
+    //             Err(e) => {
+    //                 if retried < self.retry {
+    //                     tokio::time::sleep(Duration::from_millis(1000)).await;
+    //                     retried += 1;
+    //                     continue;
+    //                 }
 
-                    return Err(e.into());
-                }
-            }
-        }
-    }
+    //                 return Err(e.into());
+    //             }
+    //         }
+    //     }
+    // }
 
     /// http post request with base url
-    pub async fn post(&self, height: u64) -> Result<()> {
-        println!("--- get_block_json_type_incall ------------------------------------------");
+    pub async fn get(&self, method: String, params: String) -> Result<BlockInfo> {
+        println!("--- get_block --- {} {}", method, params);
         let url = "https://evm.astar.network/";
         // Define the RPC request parameters
-        let json_data = r#"{"jsonrpc":"2.0", "id":"1", "method":"eth_getBlockByNumber", "params":["0x10126", true]}"#;
+        // let json_data = r#"{"jsonrpc":"2.0", "id":"1", "method":"eth_getBlockByNumber", "params":["0x10126", true]}"#;
+        let json_data = format!(r#"{{"jsonrpc":"2.0", "id":"1", "method":"{}", "params":{}}}"#, method, params).as_str();
         let client = reqwest::Client::new();
         let response = self.client
             .post(url)
@@ -127,35 +128,6 @@ impl Client {
         println!("{:?}", result);
         println!("Hash: {:?}", result["hash"]);
 
-
-        // println!("{:#?}", self.client);
-        // println!("{:#?}", self.client
-        // .get("https://evm.astar.network")
-        // .header("Content-Type", "application/json;charset=utf-8")
-        // .json(&rpc_request)  );
-        // Send the RPC request
-        // let response = self.client
-        //     .post("https://evm.astar.network")
-        //     .header(CONTENT_TYPE, "application/json;charset=utf-8")
-        //     .json(&rpc_request)
-        //     .send()
-        //     .await?
-            // .json::<map>()
-            // .await?
-            ;
-        
-        // let parsed_response =
-        //     serde_json::from_str::<String>(&response);
-
-        // println!("{:#?}", response);
-        // match parsed_response {
-        //     Ok(response) => {
-        //         println!("Parsed RPC Response: {:?}", response);
-        //     }
-        //     Err(err) => {
-        //         eprintln!("Error parsing response: {:?}", err);
-        //     }
-        // }
         Ok(())
 
     }
@@ -210,8 +182,9 @@ impl Client {
     ///   assert_eq!(block, serde_json::from_str::<Block>(&json).unwrap());
     /// }
     /// ```
-    pub async fn get_block_by_height(&self, height: u64) -> Result<Block> {
-        self.get(&format!("block/height/{}", height)).await
+    pub async fn get_block_by_height(&self, height: u64) -> Result<BlockInfo> {
+        let params = format!(r#"[{}, true]"#, height.to_string());
+        self.get("eth_getBlockByNumber".to_owned(), params).await
     }
 
     /// ```rust
@@ -238,14 +211,14 @@ impl Client {
     ///   let block = rt.block_on(client.get_block_by_hash(hash)).unwrap();
     ///   assert_eq!(block, serde_json::from_str::<Block>(&json).unwrap());
     /// }
-    pub async fn get_block_by_hash(&self, hash: &str) -> Result<Block> {
-        self.get(&format!("block/hash/{}", hash)).await
-    }
+    pub async fn get_block_by_hash(&self, hash: &str) -> Result<BlockInfo> {
+        let params = format!(r#"[{}]"#, hash.to_string());
+        self.get("eth_getBlockByHash".to_owned(), params).await    }
 
     /// get latest block
-    pub async fn get_current_block(&self) -> Result<Block> {
-        self.get("current_block").await
-    }
+    pub async fn get_current_block(&self) -> Result<BlockInfo> {
+        let params = format!(r#"[]"#);
+        self.get("eth_blockNumber".to_owned(), params).await    }
 
     /// get arweave transaction by id
     ///
@@ -262,7 +235,8 @@ impl Client {
     /// }
     /// ```
     pub async fn get_tx_by_id(&self, id: &str) -> Result<Transaction> {
-        self.get(&format!("tx/{}", id)).await
+        // self.get(&format!("tx/{}", id)).await
+        !todo!()
     }
 
     /// get arweave transaction data by id
