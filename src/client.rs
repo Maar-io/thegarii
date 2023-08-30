@@ -4,7 +4,7 @@
 //! arweave client
 use crate::{
     result::{Error, Result},
-    types::{Block, FirehoseBlock, Transaction, BlockInfo, ResponseRPC},
+    types::{Block, FirehoseBlock, Transaction, ResponseRPC},
     Env,
 };
 use futures::future::join_all;
@@ -105,34 +105,42 @@ impl Client {
     // }
 
     /// http post request with base url
-    pub async fn get(&self, method: String, params: String) -> Result<BlockInfo> {
+    pub async fn get(&self, method: String, params: String) -> Result<Block> {
         println!("--- get_block --- {} {}", method, params);
         let url = "https://evm.astar.network/";
         // Define the RPC request parameters
-        // let json_data = r#"{"jsonrpc":"2.0", "id":"1", "method":"eth_getBlockByNumber", "params":["0x10126", true]}"#;
-        let json_data = format!(r#"{{"jsonrpc":"2.0", "id":"1", "method":"{}", "params":{}}}"#, method, params).as_str();
+        let input = json!({
+            "jsonrpc": "2.0",
+            "id": "1",
+            "method": method,
+            "params": params,
+        });
+        // let json_data = format!(r#"{{"jsonrpc":"2.0", "id":"1", "method":"{}", "params":{}}}"#, method, params).as_str();
         let client = reqwest::Client::new();
         let response = self.client
             .post(url)
-            .header("Content-Type", "application/json;charset=utf-8")
-            .body(json_data.to_owned())
+            .header(CONTENT_TYPE, "application/json;charset=utf-8")
+            .body(input.to_string())
             .send()
             .await?
             .json::<ResponseRPC>()
             .await?;
-    
+
         // Parse the response as JSON
         let result = response.result.clone();
-    
+
         // Print the parsed JSON response
         println!("{:?}", result);
         println!("Hash: {:?}", result["hash"]);
 
-        Ok(())
+        let block = serde_json::from_value::<Block>(result).unwrap();
+        println!("Block {:?}", block);
+
+        Ok(block)
 
     }
-        
-    
+
+
 
     fn build_request_json(&self, params: Value, method: &str) -> Value {
         // let jsonrpc = "2.0";
@@ -182,7 +190,7 @@ impl Client {
     ///   assert_eq!(block, serde_json::from_str::<Block>(&json).unwrap());
     /// }
     /// ```
-    pub async fn get_block_by_height(&self, height: u64) -> Result<BlockInfo> {
+    pub async fn get_block_by_height(&self, height: u64) -> Result<Block> {
         let params = format!(r#"[{}, true]"#, height.to_string());
         self.get("eth_getBlockByNumber".to_owned(), params).await
     }
@@ -211,12 +219,12 @@ impl Client {
     ///   let block = rt.block_on(client.get_block_by_hash(hash)).unwrap();
     ///   assert_eq!(block, serde_json::from_str::<Block>(&json).unwrap());
     /// }
-    pub async fn get_block_by_hash(&self, hash: &str) -> Result<BlockInfo> {
+    pub async fn get_block_by_hash(&self, hash: &str) -> Result<Block> {
         let params = format!(r#"[{}]"#, hash.to_string());
         self.get("eth_getBlockByHash".to_owned(), params).await    }
 
     /// get latest block
-    pub async fn get_current_block(&self) -> Result<BlockInfo> {
+    pub async fn get_current_block(&self) -> Result<Block> {
         let params = format!(r#"[]"#);
         self.get("eth_blockNumber".to_owned(), params).await    }
 
@@ -236,7 +244,7 @@ impl Client {
     /// ```
     pub async fn get_tx_by_id(&self, id: &str) -> Result<Transaction> {
         // self.get(&format!("tx/{}", id)).await
-        !todo!()
+        todo!()
     }
 
     /// get arweave transaction data by id
@@ -287,13 +295,13 @@ impl Client {
     pub async fn get_firehose_block_by_height(&self, height: u64) -> Result<FirehoseBlock> {
         let block = self.get_block_by_height(height).await?;
         // println!("arweave block: {:?}", block);
-        let txs: Vec<Transaction> = join_all(block.txs.iter().map(|tx| self.get_tx_by_id(tx)))
+        let txs: Vec<Transaction> = join_all(block.transactions.iter().map(|tx| self.get_tx_by_id(tx)))
             .await
             .into_iter()
             .collect::<Result<Vec<Transaction>>>()?;
 
         let mut firehose_block: FirehoseBlock = block.into();
-        firehose_block.txs = txs;
+        firehose_block.transactions = txs;
         Ok(firehose_block)
     }
 

@@ -54,7 +54,7 @@ impl Polling {
     ///
     /// DMLOG BLOCK <HEIGHT> <ENCODED>
     fn dm_log(b: FirehoseBlock) -> Result<()> {
-        let height = b.height;
+        let height = b.number.parse::<u64>()?;
         let proto: Block = b.try_into()?;
 
         println!(
@@ -80,68 +80,68 @@ impl Polling {
     ///
     /// - return the height of fork block if exists
     /// - replace live_blocks field with a sorted stack
-    fn cmp_live_blocks(&mut self, blocks: &mut [FirehoseBlock]) -> Result<()> {
-        if blocks.is_empty() {
-            return Ok(());
-        }
+    // fn cmp_live_blocks(&mut self, blocks: &mut [FirehoseBlock]) -> Result<()> {
+    //     if blocks.is_empty() {
+    //         return Ok(());
+    //     }
 
-        // # Safty
-        //
-        // this will never happen since we have an empty check above
-        let last = blocks.last().ok_or(Error::ParseBlockPtrFailed)?.clone();
-        if last.height + self.confirms < self.latest {
-            return Ok(());
-        }
+    //     // # Safty
+    //     //
+    //     // this will never happen since we have an empty check above
+    //     let last = blocks.last().ok_or(Error::ParseBlockPtrFailed)?.clone();
+    //     if last.height + self.confirms < self.latest {
+    //         return Ok(());
+    //     }
 
-        // - detect if have fork
-        // - add new live blocks
-        let mut dup_blocks = vec![];
-        for b in blocks.iter() {
-            let cumulative_diff =
-                U256::from_dec_str(&b.cumulative_diff.clone().unwrap_or_else(|| "0".into()))?;
+    //     // - detect if have fork
+    //     // - add new live blocks
+    //     let mut dup_blocks = vec![];
+    //     for b in blocks.iter() {
+    //         let cumulative_diff =
+    //             U256::from_dec_str(&b.cumulative_diff.clone().unwrap_or_else(|| "0".into()))?;
 
-            let block_info = BlockInfo {
-                indep_hash: b.indep_hash.clone(),
-                cumulative_diff,
-            };
+    //         let block_info = BlockInfo {
+    //             indep_hash: b.indep_hash.clone(),
+    //             cumulative_diff,
+    //         };
 
-            // detect fork
-            if let Some(value) = self.live_blocks.get(&b.height) {
-                // - comparing if have different `indep_hash`
-                // - comparing if the block belongs to a longer chain
-                if *value.indep_hash != b.indep_hash && cumulative_diff > value.cumulative_diff {
-                    // TODO
-                    //
-                    // return fork number
-                } else {
-                    dup_blocks.push(b.height);
-                    continue;
-                }
-            }
+    //         // detect fork
+    //         if let Some(value) = self.live_blocks.get(&b.height) {
+    //             // - comparing if have different `indep_hash`
+    //             // - comparing if the block belongs to a longer chain
+    //             if *value.indep_hash != b.indep_hash && cumulative_diff > value.cumulative_diff {
+    //                 // TODO
+    //                 //
+    //                 // return fork number
+    //             } else {
+    //                 dup_blocks.push(b.height);
+    //                 continue;
+    //             }
+    //         }
 
-            // update live blocks
-            if b.height + self.confirms > self.latest {
-                self.live_blocks.insert(b.height, block_info);
-            }
-        }
+    //         // update live blocks
+    //         if b.height + self.confirms > self.latest {
+    //             self.live_blocks.insert(b.height, block_info);
+    //         }
+    //     }
 
-        // remove emitted live blocks
-        // blocks.retain(|b| !dup_blocks.contains(&b.height));
+        // // remove emitted live blocks
+        // // blocks.retain(|b| !dup_blocks.contains(&b.height));
 
-        // trim irreversible blocks
-        self.live_blocks = self
-            .live_blocks
-            .clone()
-            .into_iter()
-            .filter(|(h, _)| *h + self.confirms > self.latest)
-            .collect();
+        // // trim irreversible blocks
+        // self.live_blocks = self
+        //     .live_blocks
+        //     .clone()
+        //     .into_iter()
+        //     .filter(|(h, _)| *h + self.confirms > self.latest)
+        //     .collect();
 
-        log::trace!(
-            "live blocks: {:?}",
-            self.live_blocks.keys().into_iter().collect::<Vec<&u64>>()
-        );
-        Ok(())
-    }
+        // log::trace!(
+        //     "live blocks: {:?}",
+        //     self.live_blocks.keys().into_iter().collect::<Vec<&u64>>()
+        // );
+        // Ok(())
+    // }
 
     /// poll blocks and write to stdout
     async fn poll(&mut self, blocks: impl IntoIterator<Item = u64>) -> Result<()> {
@@ -160,10 +160,10 @@ impl Polling {
             }
 
             // poll blocks and dm logging
-            let mut blocks = self.client.poll(polling.into_iter()).await?;
-            self.cmp_live_blocks(&mut blocks)?;
+            let blocks = self.client.poll(polling.into_iter()).await?;
+            // self.cmp_live_blocks(&mut blocks)?;
             for b in blocks {
-                let cur = b.height;
+                let cur = b.number.parse::<u64>()?;
                 Self::dm_log(b)?;
 
                 // # Safty
@@ -183,7 +183,11 @@ impl Polling {
 
     /// poll to head
     async fn track_head(&mut self) -> Result<()> {
-        self.latest = self.client.get_current_block().await?.height;
+        self.latest = self.client
+            .get_current_block()
+            .await?
+            .number
+            .parse::<u64>()?;
         self.poll(self.ptr..=self.latest).await?;
         Ok(())
     }

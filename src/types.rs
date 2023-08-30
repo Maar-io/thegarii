@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 //! arweave types
+use std::vec;
+
 use crate::encoding::{number_or_string, option_number_or_string};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -21,45 +23,45 @@ use serde_json::Value;
 ///
 /// ## TODO
 ///
-/// Convert `String` to `Vec<u8>` for more effcient
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub struct Block {
-    // - block height < 269510
-    pub nonce: String,
-    pub previous_block: String,
-    pub timestamp: u64,
-    pub last_retarget: u64,
-    // - `u64` if block height < 269510
-    // - `String` if block height >= 269510
-    #[serde(deserialize_with = "number_or_string")]
-    pub diff: String,
-    pub height: u64,
-    pub hash: String,
-    pub indep_hash: String,
-    pub txs: Vec<String>,
-    pub wallet_list: String,
-    pub reward_addr: String,
-    pub tags: Vec<Tag>,
-    #[serde(deserialize_with = "number_or_string")]
-    pub reward_pool: String,
-    #[serde(deserialize_with = "number_or_string")]
-    pub weave_size: String,
-    #[serde(deserialize_with = "number_or_string")]
-    pub block_size: String,
-    // - 269510 <= block height < 422250
-    #[serde(default)]
-    #[serde(deserialize_with = "option_number_or_string")]
-    pub cumulative_diff: Option<String>,
-    pub hash_list_merkle: Option<String>,
-    // - block height > 422250
-    pub tx_root: Option<String>,
-    pub tx_tree: Option<Vec<String>>,
-    pub poa: Option<Poa>,
-}
+// /// Convert `String` to `Vec<u8>` for more effcient
+// #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+// pub struct BlockArwave {
+//     // - block height < 269510
+//     pub nonce: String,
+//     pub previous_block: String,
+//     pub timestamp: u64,
+//     pub last_retarget: u64,
+//     // - `u64` if block height < 269510
+//     // - `String` if block height >= 269510
+//     #[serde(deserialize_with = "number_or_string")]
+//     pub diff: String,
+//     pub height: u64,
+//     pub hash: String,
+//     pub indep_hash: String,
+//     pub txs: Vec<String>,
+//     pub wallet_list: String,
+//     pub reward_addr: String,
+//     pub tags: Vec<Tag>,
+//     #[serde(deserialize_with = "number_or_string")]
+//     pub reward_pool: String,
+//     #[serde(deserialize_with = "number_or_string")]
+//     pub weave_size: String,
+//     #[serde(deserialize_with = "number_or_string")]
+//     pub block_size: String,
+//     // - 269510 <= block height < 422250
+//     #[serde(default)]
+//     #[serde(deserialize_with = "option_number_or_string")]
+//     pub cumulative_diff: Option<String>,
+//     pub hash_list_merkle: Option<String>,
+//     // - block height > 422250
+//     pub tx_root: Option<String>,
+//     pub tx_tree: Option<Vec<String>>,
+//     pub poa: Option<Poa>,
+// }
 
 #[allow(non_snake_case)]
 #[derive(Debug, Deserialize)]
-pub struct BlockInfo {
+pub struct Block {
     author: String,
     baseFeePerGas: String,
     difficulty: String,
@@ -70,7 +72,7 @@ pub struct BlockInfo {
     logsBloom: String,
     miner: String,
     nonce: String,
-    number: String,
+    pub number: String,
     parentHash: String,
     receiptsRoot: String,
     sha3Uncles: String,
@@ -78,7 +80,7 @@ pub struct BlockInfo {
     stateRoot: String,
     timestamp: String,
     totalDifficulty: String,
-    transactions: Vec<String>, // You can change this to a more specific type if needed
+    pub transactions: Vec<String>, // You can change this to a more specific type if needed
     transactionsRoot: String,
     uncles: Vec<String>, // You can change this to a more specific type if needed
 }
@@ -90,14 +92,14 @@ pub struct ResponseRPC {
     pub result: Value,
 }
 
-/// POA field of `Block`
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub struct Poa {
-    pub option: String,
-    pub tx_path: String,
-    pub data_path: String,
-    pub chunk: String,
-}
+// /// POA field of `Block`
+// #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+// pub struct Poa {
+//     pub option: String,
+//     pub tx_path: String,
+//     pub data_path: String,
+//     pub chunk: String,
+// }
 
 /// Transaction type
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -127,79 +129,108 @@ pub struct Tag {
 /// `Block`, `Transaction` and `TransactionData`
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FirehoseBlock {
-    /// Firehose block version (unrelated to Arweave block version)
     pub ver: u32,
-    /// The block identifier
-    pub indep_hash: String,
-    /// The nonce chosen to solve the mining problem
-    pub nonce: String,
-    /// `indep_hash` of the previous block in the weave
-    pub previous_block: String,
-    /// POSIX time of block discovery
-    pub timestamp: u64,
-    /// POSIX time of the last difficulty retarget
-    pub last_retarget: u64,
-    /// Mining difficulty, the number `hash` must be greater than.
-    pub diff: String,
-    /// How many blocks have passed since the genesis block
-    pub height: u64,
-    /// Mining solution hash of the block, must satisfy the mining difficulty
+    pub author: String,
+    pub baseFeePerGas: String,
+    pub difficulty: String,
+    pub extraData: String,
+    pub gasLimit: String,
+    pub gasUsed: String,
     pub hash: String,
-    /// Merkle root of the tree of Merkle roots of block's transactions' data.
-    pub tx_root: Option<String>,
-    /// Transactions contained within this block
-    pub txs: Vec<Transaction>,
-    /// The root hash of the Merkle Patricia Tree containing
-    /// all wallet (account) balances and the identifiers
-    /// of the last transactions posted by them, if any.
-    pub wallet_list: String,
-    /// Address of the account to receive the block rewards. Can also be unclaimed which is encoded as a null byte
-    pub reward_addr: String,
-    /// Tags that a block producer can add to a block
-    pub tags: Vec<Tag>,
-    /// Size of reward pool
-    pub reward_pool: String,
-    /// Size of the weave in bytes
-    pub weave_size: String,
-    /// Size of this block in bytes
-    pub block_size: String,
-    /// Required after the version 1.8 fork. Zero otherwise.
-    /// The sum of the average number of hashes computed
-    /// by the network to produce the past blocks including this one.
-    pub cumulative_diff: Option<String>,
-    // // The list of the block identifiers of the last
-    // // STORE_BLOCKS_BEHIND_CURRENT blocks.
-    // pub hash_list: Vec<String>,
-    // Required after the version 1.8 fork. Null byte otherwise.
-    // The Merkle root of the block index - the list of {`indep_hash`, `weave_size`, `tx_root`} triplets
-    pub hash_list_merkle: Option<String>,
-    // The proof of access, Used after v2.4 only, set as defaults otherwise
-    pub poa: Option<Poa>,
+    pub logsBloom: String,
+    pub miner: String,
+    pub nonce: String,
+    pub number: String,
+    pub parentHash: String,
+    pub receiptsRoot: String,
+    pub sha3Uncles: String,
+    pub size: String,
+    pub stateRoot: String,
+    pub timestamp: String,
+    pub totalDifficulty: String,
+    pub transactions: Vec<Transaction>, // You can change this to a more specific type if needed
+    pub transactionsRoot: String,
+    pub uncles: Vec<String>,
 }
+// /// abstract firehose block which simply combines
+// /// `Block`, `Transaction` and `TransactionData`
+// #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+// pub struct FirehoseBlock {
+//     /// Firehose block version (unrelated to Arweave block version)
+//     pub ver: u32,
+//     /// The block identifier
+//     pub indep_hash: String,
+//     /// The nonce chosen to solve the mining problem
+//     pub nonce: String,
+//     /// `indep_hash` of the previous block in the weave
+//     pub previous_block: String,
+//     /// POSIX time of block discovery
+//     pub timestamp: u64,
+//     /// POSIX time of the last difficulty retarget
+//     pub last_retarget: u64,
+//     /// Mining difficulty, the number `hash` must be greater than.
+//     pub diff: String,
+//     /// How many blocks have passed since the genesis block
+//     pub height: u64,
+//     /// Mining solution hash of the block, must satisfy the mining difficulty
+//     pub hash: String,
+//     /// Merkle root of the tree of Merkle roots of block's transactions' data.
+//     pub tx_root: Option<String>,
+//     /// Transactions contained within this block
+//     pub txs: Vec<Transaction>,
+//     /// The root hash of the Merkle Patricia Tree containing
+//     /// all wallet (account) balances and the identifiers
+//     /// of the last transactions posted by them, if any.
+//     pub wallet_list: String,
+//     /// Address of the account to receive the block rewards. Can also be unclaimed which is encoded as a null byte
+//     pub reward_addr: String,
+//     /// Tags that a block producer can add to a block
+//     pub tags: Vec<Tag>,
+//     /// Size of reward pool
+//     pub reward_pool: String,
+//     /// Size of the weave in bytes
+//     pub weave_size: String,
+//     /// Size of this block in bytes
+//     pub block_size: String,
+//     /// Required after the version 1.8 fork. Zero otherwise.
+//     /// The sum of the average number of hashes computed
+//     /// by the network to produce the past blocks including this one.
+//     pub cumulative_diff: Option<String>,
+//     // // The list of the block identifiers of the last
+//     // // STORE_BLOCKS_BEHIND_CURRENT blocks.
+//     // pub hash_list: Vec<String>,
+//     // Required after the version 1.8 fork. Null byte otherwise.
+//     // The Merkle root of the block index - the list of {`indep_hash`, `weave_size`, `tx_root`} triplets
+//     pub hash_list_merkle: Option<String>,
+//     // The proof of access, Used after v2.4 only, set as defaults otherwise
+//     pub poa: Option<Poa>,
+// }
 
 impl From<Block> for FirehoseBlock {
     fn from(block: Block) -> Self {
         FirehoseBlock {
             ver: 1,
-            indep_hash: block.indep_hash,
-            nonce: block.nonce,
-            previous_block: block.previous_block,
-            timestamp: block.timestamp,
-            last_retarget: block.last_retarget,
-            diff: block.diff,
-            height: block.height,
+            author: block.author,
+            baseFeePerGas: block.baseFeePerGas,
+            difficulty: block.difficulty,
+            extraData: block.extraData,
+            gasLimit: block.gasLimit,
+            gasUsed: block.gasUsed,
             hash: block.hash,
-            tx_root: block.tx_root,
-            txs: vec![],
-            wallet_list: block.wallet_list,
-            reward_addr: block.reward_addr,
-            tags: block.tags,
-            reward_pool: block.reward_pool,
-            weave_size: block.weave_size,
-            block_size: block.block_size,
-            cumulative_diff: block.cumulative_diff,
-            hash_list_merkle: block.hash_list_merkle,
-            poa: block.poa,
+            logsBloom: block.logsBloom,
+            miner: block.miner,
+            nonce: block.nonce,
+            number: block.number,
+            parentHash: block.parentHash,
+            receiptsRoot: block.receiptsRoot,
+            sha3Uncles: block.sha3Uncles,
+            size: block.size,
+            stateRoot: block.stateRoot,
+            timestamp: block.timestamp,
+            totalDifficulty: block.totalDifficulty,
+            transactions: vec![],
+            transactionsRoot: block.transactionsRoot,
+            uncles: block.uncles,
         }
     }
 }

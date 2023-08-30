@@ -3,7 +3,7 @@
 #![allow(missing_docs)]
 use crate::{
     result::{Error, Result},
-    types::{self, FirehoseBlock, Poa, U256},
+    types::{self, FirehoseBlock, U256},
 };
 use core::convert::{TryFrom, TryInto};
 
@@ -61,36 +61,65 @@ impl TryFrom<FirehoseBlock> for Block {
     fn try_from(block: FirehoseBlock) -> Result<Self> {
         Ok(Self {
             ver: 1,
-            indep_hash: bd(&block.indep_hash)?,
-            nonce: bd(&block.nonce)?,
-            previous_block: bd(&block.previous_block)?,
-            timestamp: block.timestamp,
-            last_retarget: block.last_retarget,
-            diff: Some(block.diff.try_into()?),
-            height: block.height,
+            author: block.author,
+            baseFeePerGas: Some(block.baseFeePerGas.try_into()?),
+            difficulty: Some(block.difficulty.try_into()?),
+            extraData: bd(&block.extraData)?,
+            gasLimit: Some(block.gasLimit.try_into()?),
+            gasUsed: Some(block.gasUsed.try_into()?),
             hash: bd(&block.hash)?,
-            tx_root: block.tx_root.unwrap_or_default().try_into()?,
-            txs: block
-                .txs
+            logsBloom: bd(&block.logsBloom)?,
+            miner: bd(&block.miner)?,
+            nonce: bd(&block.nonce)?,
+            number: block.number,
+            parentHash: bd(&block.parentHash)?,
+            receiptsRoot: bd(&block.receiptsRoot)?,
+            sha3Uncles: bd(&block.sha3Uncles)?,
+            size: Some(block.size.try_into()?),
+            stateRoot: bd(&block.stateRoot)?,
+            timestamp: block.timestamp,
+            totalDifficulty: Some(block.totalDifficulty.try_into()?),
+            transactions: block
+                .transactions
                 .into_iter()
                 .map(TryInto::try_into)
                 .collect::<Result<Vec<_>>>()?,
-            wallet_list: bd(&block.wallet_list)?,
-            reward_addr: bd(&block.reward_addr)?,
-            tags: block
-                .tags
-                .into_iter()
-                .map(TryInto::try_into)
-                .collect::<Result<Vec<_>>>()?,
-            reward_pool: Some(BigInt {
-                bytes: U256::from_dec_str(&block.reward_pool)?.to_be(),
-            }),
-            weave_size: Some(block.weave_size.try_into()?),
-            block_size: Some(block.block_size.try_into()?),
-            cumulative_diff: Some(block.cumulative_diff.try_into()?),
-            hash_list_merkle: block.hash_list_merkle.unwrap_or_default().try_into()?,
-            poa: block.poa.and_then(|p| p.try_into().ok()),
+            transactionsRoot: bd(&block.transactionsRoot)?,
+            uncles: block.uncles,
+
         })
+        // Ok(Self {
+        //     ver: 1,
+        //     indep_hash: bd(&block.indep_hash)?,
+        //     nonce: bd(&block.nonce)?,
+        //     previous_block: bd(&block.previous_block)?,
+        //     timestamp: block.timestamp,
+        //     last_retarget: block.last_retarget,
+        //     diff: Some(block.diff.try_into()?),
+        //     height: block.height,
+        //     hash: bd(&block.hash)?,
+        //     tx_root: block.tx_root.unwrap_or_default().try_into()?,
+        //     txs: block
+        //         .txs
+        //         .into_iter()
+        //         .map(TryInto::try_into)
+        //         .collect::<Result<Vec<_>>>()?,
+        //     wallet_list: bd(&block.wallet_list)?,
+        //     reward_addr: bd(&block.reward_addr)?,
+        //     tags: block
+        //         .tags
+        //         .into_iter()
+        //         .map(TryInto::try_into)
+        //         .collect::<Result<Vec<_>>>()?,
+        //     reward_pool: Some(BigInt {
+        //         bytes: U256::from_dec_str(&block.reward_pool)?.to_be(),
+        //     }),
+        //     weave_size: Some(block.weave_size.try_into()?),
+        //     block_size: Some(block.block_size.try_into()?),
+        //     cumulative_diff: Some(block.cumulative_diff.try_into()?),
+        //     hash_list_merkle: block.hash_list_merkle.unwrap_or_default().try_into()?,
+        //     poa: block.poa.and_then(|p| p.try_into().ok()),
+        // })
     }
 }
 

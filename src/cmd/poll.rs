@@ -56,8 +56,11 @@ impl Poll {
 
     pub async fn exec(&self, env: Env) -> Result<()> {
         let client = Client::from_env()?;
-        let current = client.get_current_block().await?.height;
-
+        let current = client
+            .get_current_block()
+            .await?
+            .number
+            .parse::<u64>()?;
         // reset set end if it's zero
         let mut end = self.end;
         if end == 0 {

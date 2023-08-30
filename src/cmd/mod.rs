@@ -8,14 +8,11 @@ use structopt::StructOpt;
 mod console;
 mod get;
 mod poll;
-mod post;
 
 #[derive(StructOpt, Debug)]
 pub enum Command {
     /// Get a block from database or fetch it
     Get(get::Get),
-    /// Get a block from database or fetch it
-    Post(post::Post),
     /// Poll blocks and print to stdout
     Console(console::Console),
     /// Dry-run random polling with time estimating
@@ -58,7 +55,6 @@ impl Opt {
         match opt.command {
             Command::Get(get) => get.exec().await?,
             Command::Poll(poll) => poll.exec(env).await?,
-            Command::Post(p) => p.exec().await?,
             Command::Console(console) => console.exec(env).await?,
         }
 
